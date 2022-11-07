@@ -19,4 +19,17 @@ def insert_game(db: sqlalchemy.orm.Session, game: schemas.GameCreate):
     db.add(db_game)
     db.commit()
     db.refresh(db_game)
+    return db_game.id
+    # return db_game
+
+def find_game(db: sqlalchemy.orm.Session, game_id: int, move: schemas.Move):
+    db_game = db.query(models.Game).filter(models.Game.id == game_id).first()
+
+    cur_game = list(db_game.result)
+    cur_game[move.position] = move.type
+    cur_game = ' '.join(cur_game)
+
+    db_game.result = cur_game
+    db.commit()
+    db.refresh(db_game)
     return db_game

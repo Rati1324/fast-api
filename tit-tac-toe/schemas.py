@@ -11,3 +11,9 @@ class Game(pydantic.BaseModel):
 class GameCreate(Game):
     pass
 
+class Move(pydantic.BaseModel):
+    type: str
+    position: int
+
+    class Config:
+        orm_mode = True
