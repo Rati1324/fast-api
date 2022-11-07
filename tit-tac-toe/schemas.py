@@ -1,7 +1,7 @@
 import pydantic
 
 class Game(pydantic.BaseModel):
-    id: int
+    id: str
     result: str
     finished: bool
 
