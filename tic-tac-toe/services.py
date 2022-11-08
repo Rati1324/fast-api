@@ -21,25 +21,30 @@ def insert_game(db: sqlalchemy.orm.Session, game: schemas.GameCreate):
     db.refresh(db_game)
     return db_game.id
 
-def make_move(db: sqlalchemy.orm.Session, game_id: int, move: schemas.Move):
+def make_move(db: sqlalchemy.orm.Session, game_id: str, move: schemas.Move):
     db_game = db.query(models.Game).filter(models.Game.id == game_id).first()
 
-    if db_game.result[move.position] == '-' and 0 <= move.position <= 8:
-        cur_game = list(db_game.result)
-        cur_game[move.position] = move.type
-        cur_game = ''.join(cur_game)
+    if check_game(db_game.result)["game"] != "finished":
+        if db_game.result[move.position] == '-' and 0 <= move.position <= 8:
+            cur_game = list(db_game.result)
+            cur_game[move.position] = move.type
+            cur_game = ''.join(cur_game)
 
-        db_game.result = cur_game
-        db.commit()
-        db.refresh(db_game)
-        return {"result": "success"}
-    else:
-        return {"result": "error", "error_code":"invalid_position"}
+            db_game.result = cur_game
+            db.commit()
+            db.refresh(db_game)
+            result = {"result": "success"}
+        else:
+            result = {"result": "error", "error_code":"invalid_position"}
+    else: result = {"result": "error", "error_code":"game_is_finished"}
+    return result
 
-def check_game(db: sqlalchemy.orm.Session, game_id: int):
-    db_game = db.query(models.Game).filter(models.Game.id == game_id).first()
-    board = db_game.result
+def check(db: sqlalchemy.orm.Session, game_id: str):
+    db_game =  db.query(models.Game).filter(models.Game.id == game_id).first()
+    return check_game(db_game.result)
 
+
+def check_game(board):
     positions = [[0, 1, 2],
                 [3, 4, 5],
                 [6, 7, 8],
@@ -49,24 +54,20 @@ def check_game(db: sqlalchemy.orm.Session, game_id: int):
                 [0, 4, 8],
                 [2, 4, 6],]
 
-    def check_draw():
-        for i in board:
-            if board[a] != '-':
-                return False
-        return True
-
+    draw = True
+    finished = False
     for i in positions:
         a, b, c = i
         if board[a] != '-':
             if board[a] == board[b] and board[b] == board[c]:
                 winner = board[a]
-                db_game.finished = True
+                finished = True
                 break
-
-    draw = check_draw()
+        else:
+            draw = False
             
-    if db_game.finished:
-        status = {"game": "finished", "winner": winner if not draw else null}
+    if finished:
+        status = {"game": "finished", "winner": winner if not draw else "null"}
     else:
         status = {"game": "in_progress"}
 

@@ -21,11 +21,11 @@ def move(
     return services.make_move(db, game_id, move)
 
 @app.get("/check/{game_id}")
-def move(
+def check(
     game_id: str,
     db: sqlalchemy.orm.Session = fastapi.Depends(services.get_db)
 ):
-    db_game = services.check_game(db, game_id)
+    db_game = services.check(db, game_id)
     return db_game
 
 @app.post("/games/", response_model=schemas.Game)
