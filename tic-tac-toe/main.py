@@ -9,7 +9,7 @@ services.create_database()
 
 @app.get("/start")
 def start_game(db: sqlalchemy.orm.Session = fastapi.Depends(services.get_db)):
-    new_game = schemas.Game(id=str(uuid.uuid4()), board="---------", order="000000000", finished=False)
+    new_game = schemas.Game(id=str(uuid.uuid4()), board="---------", order="000000000", winner="null")
     return services.insert_game(db=db, game=new_game)
 
 @app.post("/move/{game_id}")

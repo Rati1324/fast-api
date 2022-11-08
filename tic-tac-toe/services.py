@@ -26,7 +26,10 @@ def make_move(db: sqlalchemy.orm.Session, game_id: str, move: schemas.Move):
 
     last_play = max([int(i) for i in db_game.order])
 
-    if check_game(db_game.board)["game"] != "finished":
+    if db_game.winner != "null":
+        result = {"result": "error", "error_code":"game_is_finished"}
+
+    elif check_game(db_game.board) == "null":
         if db_game.board[move.position] == '-' and 0 <= move.position <= 8:
             cur_game = list(db_game.board)
             cur_game[move.position] = move.type
@@ -46,12 +49,22 @@ def make_move(db: sqlalchemy.orm.Session, game_id: str, move: schemas.Move):
         db.commit()
         db.refresh(db_game)
         result = {"result": "error", "error_code":"game_is_finished"}
+
     return result
 
 def check(db: sqlalchemy.orm.Session, game_id: str):
-    db_game =  db.query(models.Game).filter(models.Game.id == game_id).first()
-    return check_game(db_game.board)
+    db_game = db.query(models.Game).filter(models.Game.id == game_id).first()
+    result = check_game(db_game.board)
+    db_game.winner = result
+    db.commit()
+    db.refresh(db_game)
 
+    if result == "null":
+        result = {"game": "in_progress"}
+    else:
+        result = {"game": "finished", "winner": result if result != "draw" else "null"}
+
+    return result
 
 def check_game(board):
     positions = [[0, 1, 2],
@@ -64,23 +77,23 @@ def check_game(board):
                 [2, 4, 6],]
 
     draw = True
-    finished = False
+    winner = "null"
+
     for i in positions:
         a, b, c = i
-        if board[a] != '-':
+        if board[a] != '-' and board[b] != '-' and board[c] != '-':
             if board[a] == board[b] and board[b] == board[c]:
-                winner = board[a]
-                finished = True
-                break
+                return board[a]
         else:
             draw = False
+    return "draw" if draw else winner
             
-    if finished:
-        status = {"game": "finished", "winner": winner if not draw else "null"}
-    else:
-        status = {"game": "in_progress"}
+    # if finished:
+    #     status = {"game": "finished", "winner": winner if not draw else "null"}
+    # else:
+    #     status = {"game": "in_progress"}
 
-    return status
+    return winner
 
 def get_history(db: sqlalchemy.orm.Session):
     db_games =  db.query(models.Game).all()

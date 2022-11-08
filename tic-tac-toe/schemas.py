@@ -4,7 +4,7 @@ class Game(pydantic.BaseModel):
     id: str
     board: str
     order: str
-    finished: bool
+    winner: str
 
     class Config:
         orm_mode = True

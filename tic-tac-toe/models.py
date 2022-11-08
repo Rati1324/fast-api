@@ -7,4 +7,4 @@ class Game(database.Base):
     id = sql.Column(sql.String, primary_key=True, index=True)
     board = sql.Column(sql.String)
     order = sql.Column(sql.String)
-    finished = sql.Column(sql.Boolean)
+    winner = sql.Column(sql.String)
