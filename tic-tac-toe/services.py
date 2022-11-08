@@ -24,23 +24,33 @@ def insert_game(db: sqlalchemy.orm.Session, game: schemas.GameCreate):
 def make_move(db: sqlalchemy.orm.Session, game_id: str, move: schemas.Move):
     db_game = db.query(models.Game).filter(models.Game.id == game_id).first()
 
-    if check_game(db_game.result)["game"] != "finished":
-        if db_game.result[move.position] == '-' and 0 <= move.position <= 8:
-            cur_game = list(db_game.result)
-            cur_game[move.position] = move.type
-            cur_game = ''.join(cur_game)
+    last_play = max([int(i) for i in db_game.order])
 
-            db_game.result = cur_game
+    if check_game(db_game.board)["game"] != "finished":
+        if db_game.board[move.position] == '-' and 0 <= move.position <= 8:
+            cur_game = list(db_game.board)
+            cur_game[move.position] = move.type
+            db_game.board = ''.join(cur_game)
+
+            cur_order = list(db_game.order)
+            cur_order[move.position] = str(last_play+1)
+            db_game.order = ''.join(cur_order)
+
             db.commit()
             db.refresh(db_game)
             result = {"result": "success"}
         else:
             result = {"result": "error", "error_code":"invalid_position"}
-    else: result = {"result": "error", "error_code":"game_is_finished"}
+    else: 
+        db_game.finished = True
+        db.commit()
+        db.refresh(db_game)
+        result = {"result": "error", "error_code":"game_is_finished"}
     return result
+
 def check(db: sqlalchemy.orm.Session, game_id: str):
     db_game =  db.query(models.Game).filter(models.Game.id == game_id).first()
-    return check_game(db_game.result)
+    return check_game(db_game.board)
 
 
 def check_game(board):
@@ -72,4 +82,18 @@ def check_game(board):
 
     return status
 
-# def history(db: sqlalchemy.orm.Session, game_id: str):
+def get_history(db: sqlalchemy.orm.Session):
+    db_games =  db.query(models.Game).all()
+    orders = [game.order for game in db_games]
+
+    history = []
+
+    for i in range(len(db_games)):
+        history.append({"id": db_games[i].id})
+        history[i]["order"] = []
+
+        cur_order = sorted(db_games[i].order)
+        for j in range(len(cur_order)):
+            if cur_order[j] != "0":
+                history[i]["order"].append({"position": j, "order": cur_order[j]})
+    return history

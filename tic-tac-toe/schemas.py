@@ -2,7 +2,8 @@ import pydantic
 
 class Game(pydantic.BaseModel):
     id: str
-    result: str
+    board: str
+    order: str
     finished: bool
 
     class Config:

@@ -9,7 +9,7 @@ services.create_database()
 
 @app.get("/start")
 def start_game(db: sqlalchemy.orm.Session = fastapi.Depends(services.get_db)):
-    new_game = schemas.Game(id=str(uuid.uuid4()), result="---------", finished=False)
+    new_game = schemas.Game(id=str(uuid.uuid4()), board="---------", order="000000000", finished=False)
     return services.insert_game(db=db, game=new_game)
 
 @app.post("/move/{game_id}")
@@ -28,18 +28,10 @@ def check(
     db_game = services.check(db, game_id)
     return db_game
 
-@app.post("/games/", response_model=schemas.Game)
-def insert_game(
-    game: schemas.GameCreate,
+@app.get("/history")
+def history(
     db: sqlalchemy.orm.Session = fastapi.Depends(services.get_db)
 ):
-    return services.insert_game(db=db, game=game)
+    return services.get_history(db=db)
 
-@app.get("/games/", response_model=List[schemas.Game])
-def read_games(
-    skip: int = 0, 
-    limit: int = 10, 
-    db: sqlalchemy.orm.Session = fastapi.Depends(services.get_db),
-):
-    games = services.get_games(db=db, skip=skip, limit=limit)
-    return games
+
