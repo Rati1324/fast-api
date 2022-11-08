@@ -23,48 +23,37 @@ def insert_game(db: sqlalchemy.orm.Session, game: schemas.GameCreate):
 
 def make_move(db: sqlalchemy.orm.Session, game_id: str, move: schemas.Move):
     db_game = db.query(models.Game).filter(models.Game.id == game_id).first()
-
     last_play = max([int(i) for i in db_game.order])
 
+    # null = in_progress
     if db_game.winner != "null":
-        result = {"result": "error", "error_code":"game_is_finished"}
+        return {"result": "error", "error_code":"game_is_finished"}
 
-    elif check_game(db_game.board) == "null":
-        if db_game.board[move.position] == '-' and 0 <= move.position <= 8:
-            cur_game = list(db_game.board)
-            cur_game[move.position] = move.type
-            db_game.board = ''.join(cur_game)
+    if db_game.board[move.position] == '-' and 0 <= move.position <= 8:
+        cur_game = list(db_game.board)
+        cur_game[move.position] = move.type
+        db_game.board = ''.join(cur_game)
 
-            cur_order = list(db_game.order)
-            cur_order[move.position] = str(last_play+1)
-            db_game.order = ''.join(cur_order)
+        cur_order = list(db_game.order)
+        cur_order[move.position] = str(last_play+1)
+        db_game.order = ''.join(cur_order)
 
-            db.commit()
-            db.refresh(db_game)
-            result = {"result": "success"}
-        else:
-            result = {"result": "error", "error_code":"invalid_position"}
-    else: 
-        db_game.finished = True
         db.commit()
         db.refresh(db_game)
-        result = {"result": "error", "error_code":"game_is_finished"}
 
-    return result
+        check(db, game_id=game_id)
+        return {"result": "success"}
+    else:
+        return {"result": "error", "error_code":"invalid_position"}
 
 def check(db: sqlalchemy.orm.Session, game_id: str):
     db_game = db.query(models.Game).filter(models.Game.id == game_id).first()
-    result = check_game(db_game.board)
-    db_game.winner = result
-    db.commit()
-    db.refresh(db_game)
+    result = db_game.winner
 
     if result == "null":
-        result = {"game": "in_progress"}
+        return {"game": "in_progress"}
     else:
-        result = {"game": "finished", "winner": result if result != "draw" else "null"}
-
-    return result
+        return {"game": "finished", "winner": result if result != "draw" else "null"}
 
 def check_game(board):
     positions = [[0, 1, 2],
@@ -87,18 +76,9 @@ def check_game(board):
         else:
             draw = False
     return "draw" if draw else winner
-            
-    # if finished:
-    #     status = {"game": "finished", "winner": winner if not draw else "null"}
-    # else:
-    #     status = {"game": "in_progress"}
-
-    return winner
 
 def get_history(db: sqlalchemy.orm.Session):
     db_games =  db.query(models.Game).all()
-    orders = [game.order for game in db_games]
-
     history = []
 
     for i in range(len(db_games)):
