@@ -90,11 +90,12 @@ def get_history(db: sqlalchemy.orm.Session):
 
     for i in range(len(db_games)):
         history.append({"id": db_games[i].id})
-        history[i]["history"] = []
-
         cur_order = db_games[i].order
+        history[i]["history"] = [None]*9
+
         for j in range(len(cur_order)):
             if cur_order[j] != "0":
-                history[i]["history"].append({"order": cur_order[j], "position": j, "player": db_games[i].board[j]})
-        history[i]["history"] = sorted(history[i]["history"], key=lambda d: d["order"])
+                history[i]["history"][int(cur_order[j])-1] = {"position": j, "player": db_games[i].board[j]}
+        history[i]["history"] = [i for i in history[i]["history"] if i != None]
+
     return history
