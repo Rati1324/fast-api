@@ -38,7 +38,6 @@ def make_move(db: sqlalchemy.orm.Session, game_id: str, move: schemas.Move):
             result = {"result": "error", "error_code":"invalid_position"}
     else: result = {"result": "error", "error_code":"game_is_finished"}
     return result
-
 def check(db: sqlalchemy.orm.Session, game_id: str):
     db_game =  db.query(models.Game).filter(models.Game.id == game_id).first()
     return check_game(db_game.result)
@@ -73,3 +72,4 @@ def check_game(board):
 
     return status
 
+# def history(db: sqlalchemy.orm.Session, game_id: str):
