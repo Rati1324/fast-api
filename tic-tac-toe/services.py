@@ -25,7 +25,6 @@ def make_move(db: sqlalchemy.orm.Session, game_id: str, move: schemas.Move):
     db_game = db.query(models.Game).filter(models.Game.id == game_id).first()
     last_play = max([int(i) for i in db_game.order])
 
-    # null = in_progress
     if db_game.winner != "in_progress":
         return {"result": "error", "error_code":"game_is_finished"}
 
@@ -38,6 +37,7 @@ def make_move(db: sqlalchemy.orm.Session, game_id: str, move: schemas.Move):
         cur_order[move.position] = str(last_play+1)
         db_game.order = ''.join(cur_order)
 
+        # checking if it's finished 
         db_game.winner = check_game(db_game.board)
         db.commit()
         db.refresh(db_game)
@@ -64,6 +64,7 @@ def check_game(board):
                 [0, 4, 8],
                 [2, 4, 6]]
 
+    # null = draw
     status = "null"
 
     for i in positions:
